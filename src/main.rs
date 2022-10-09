@@ -1,33 +1,28 @@
 use anyhow::Result;
-use clap::Parser;
-use std::str::FromStr;
+use clap::{Parser, Subcommand};
 
-#[derive(Debug)]
-enum Command {
-    Install,
-}
-
-impl FromStr for Command {
-    type Err = anyhow::Error;
-
-    fn from_str(input: &str) -> Result<Command, Self::Err> {
-        match input {
-            "install" => Ok(Command::Install),
-            _ => anyhow::bail!("unknown command '{}'", input),
-        }
-    }
-}
-
-/// Manage Hugo versions.
+/// Manage Hugo versions
 #[derive(Parser)]
 struct Cli {
     /// The command to run
-    command: String,
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Debug, Subcommand)]
+enum Command {
+    /// Install a version of Hugo
+    Install { version: String },
 }
 
 fn main() -> Result<()> {
     let args = Cli::parse();
-    let command = Command::from_str(&args.command)?;
-    println!("Doing {:#?}!", command);
+    match args.command {
+        Command::Install { version } => install(version),
+    }
     Ok(())
+}
+
+fn install(version: std::string::String) {
+    println!("Installing {}...", version)
 }
