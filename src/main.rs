@@ -30,16 +30,29 @@ fn main() -> Result<()> {
 
 fn install(version: std::string::String) -> Result<()> {
     println!("Installing {version}...");
-    ensure_root_dir()?;
+    ensure_versions_dir()?;
     Ok(())
 }
 
-fn ensure_root_dir() -> Result<()> {
-    let dir_string = env::var(ROOT_ENV_VAR_NAME).unwrap_or_else(|_| String::from(ROOT_DEFAULT));
-    let expanded_dir_string = shellexpand::tilde(&dir_string);
-    let dir = Path::new(expanded_dir_string.as_ref());
+fn ensure_versions_dir() -> Result<()> {
+    let dir_string = root_dir() + "/versions";
+    let dir = Path::new(&dir_string);
     if !dir.exists() {
         std::fs::create_dir_all(dir)?;
     }
     Ok(())
+}
+
+fn ensure_root_dir() -> Result<()> {
+    let dir_string = root_dir();
+    let dir = Path::new(&dir_string);
+    if !dir.exists() {
+        std::fs::create_dir_all(dir)?;
+    }
+    Ok(())
+}
+
+fn root_dir() -> String {
+    let dir_string = &env::var(ROOT_ENV_VAR_NAME).unwrap_or_else(|_| String::from(ROOT_DEFAULT));
+    shellexpand::tilde(dir_string).into_owned()
 }
