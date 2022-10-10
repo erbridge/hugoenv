@@ -28,6 +28,19 @@ impl Version {
     }
   }
 
+  pub fn from_local(cwd: &Path, root_dir: &Path) -> Version {
+    let name = match fs::search_up(".hugo-version", cwd) {
+      Some(path) => std::fs::read_to_string(path).unwrap().trim().to_string(),
+      None => String::from("system"),
+    };
+
+    Version::new(name, root_dir)
+  }
+
+  pub fn name(&self) -> &String {
+    &self.name
+  }
+
   pub fn install(&self) -> Result<()> {
     println!("Installing {}...", self.name);
     fs::ensure_dir(&self.versions_dir)?;

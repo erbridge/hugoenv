@@ -18,6 +18,18 @@ struct Cli {
 enum Command {
     /// Install a version of Hugo
     Install { version: String },
+
+    /// Execute a command with the current version of Hugo
+    Exec {
+        #[command(subcommand)]
+        program: Program,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum Program {
+    /// Run hugo with the current version of Hugo
+    Hugo { args: Vec<String> },
 }
 
 fn main() -> Result<()> {
@@ -26,7 +38,20 @@ fn main() -> Result<()> {
         Command::Install { version } => {
             let ver = Version::new(version, &fs::root_dir());
             ver.install()?;
+            Ok(())
+        }
+
+        Command::Exec { program } => {
+            let local_version = Version::from_local(&fs::cwd(), &fs::root_dir());
+            let local_version_name = local_version.name();
+
+            if local_version_name == "system" {
+                // TODO: Hand over to whatever's on the path.
+                return Ok(());
+            }
+
+            println!("Running {program:?} with Hugo v{}...", local_version_name);
+            Ok(())
         }
     }
-    Ok(())
 }
