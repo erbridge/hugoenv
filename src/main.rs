@@ -19,7 +19,7 @@ struct Cli {
 #[derive(Debug, Subcommand)]
 enum Command {
     /// Install a version of Hugo
-    Install { version: String },
+    Install { version: Option<String> },
 
     /// Execute a command with the current version of Hugo
     Exec {
@@ -41,7 +41,10 @@ fn main() -> Result<()> {
     let args = Cli::parse();
     match args.command {
         Command::Install { version } => {
-            let ver = Version::new(version, &fs::root_dir());
+            let ver = match version {
+                Some(v) => Version::new(v, &fs::root_dir()),
+                None => Version::from_local(&fs::cwd(), &fs::root_dir()),
+            };
             ver.install()?;
             Ok(())
         }
