@@ -46,7 +46,8 @@ impl Version {
   fn download(&self) -> Result<()> {
     let url = format!(
       "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_darwin-universal.tar.gz",
-      self.name, self.name
+      self.name.replace("extended_", ""),
+      self.name
     );
     let response = reqwest::get(url)?;
     self.extract(response)?;
