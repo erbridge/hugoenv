@@ -41,6 +41,18 @@ impl Version {
     &self.name
   }
 
+  pub fn bin_file(&self) -> &PathBuf {
+    &self.bin_file
+  }
+
+  pub fn is_system(&self) -> bool {
+    self.name == "system"
+  }
+
+  pub fn is_installed(&self) -> bool {
+    self.bin_file.exists()
+  }
+
   pub fn install(&self) -> Result<()> {
     println!("Installing {}...", self.name);
     fs::ensure_dir(&self.versions_dir)?;
@@ -50,10 +62,6 @@ impl Version {
       self.download()?;
     }
     Ok(())
-  }
-
-  fn is_installed(&self) -> bool {
-    self.bin_file.exists()
   }
 
   fn download(&self) -> Result<()> {

@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use std::process;
 
 mod fs;
 mod version;
@@ -29,7 +30,10 @@ enum Command {
 #[derive(Debug, Subcommand)]
 enum Program {
     /// Run hugo with the current version of Hugo
-    Hugo { args: Vec<String> },
+    Hugo {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 fn main() -> Result<()> {
@@ -43,14 +47,22 @@ fn main() -> Result<()> {
 
         Command::Exec { program } => {
             let local_version = Version::from_local(&fs::cwd(), &fs::root_dir());
-            let local_version_name = local_version.name();
 
-            if local_version_name == "system" {
-                // TODO: Hand over to whatever's on the path.
-                return Ok(());
+            match program {
+                Program::Hugo { args } => {
+                    let prog = if local_version.is_system() {
+                        "hugo"
+                    } else if local_version.is_installed() {
+                        local_version.bin_file().to_str().unwrap()
+                    } else {
+                        panic!("Hugo v{} is not installed", local_version.name());
+                    };
+                    process::Command::new(prog)
+                        .args(args)
+                        .status()
+                        .expect("hugo should have run successfully");
+                }
             }
-
-            println!("Running {program:?} with Hugo v{}...", local_version_name);
             Ok(())
         }
     }
