@@ -9,6 +9,7 @@ use version::Version;
 
 /// Manage Hugo versions
 #[derive(Parser)]
+#[command(version)]
 struct Cli {
     /// The command to run
     #[command(subcommand)]
