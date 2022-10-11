@@ -1,6 +1,6 @@
 [package]
 name = "hugoenv"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["F <f@erbridge.co.uk>"]
 edition = "2021"
 description = "A version manager for Hugo"
