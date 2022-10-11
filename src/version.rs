@@ -86,18 +86,12 @@ impl Version {
     let name = &self.name;
     let unextended_name = name.replace("extended_", "");
 
-    if VersionReq::parse("<0.102.0")
-      .unwrap()
-      .matches(&self.version)
-    {
+    if self.is_matched_by("<0.102.0") {
       format!(
         "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_macOS-ARM64.tar.gz",
         unextended_name, name
       )
-    } else if VersionReq::parse("<0.103.0")
-      .unwrap()
-      .matches(&self.version)
-    {
+    } else if self.is_matched_by("<0.103.0") {
       format!(
         "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_macOS-universal.tar.gz",
         unextended_name, name
@@ -108,5 +102,11 @@ impl Version {
         unextended_name, name
       )
     }
+  }
+
+  fn is_matched_by(&self, version_constraint: &str) -> bool {
+    VersionReq::parse(version_constraint)
+      .unwrap()
+      .matches(&self.version)
   }
 }
