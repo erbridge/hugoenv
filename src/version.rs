@@ -1,3 +1,4 @@
+use std::env::consts::ARCH;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
@@ -69,7 +70,7 @@ impl Version {
   }
 
   fn download(&self) -> Result<()> {
-    let url = self.download_url();
+    let url = self.download_url()?;
     let response = reqwest::get(url)?;
     self.extract(response)?;
     Ok(())
@@ -82,15 +83,22 @@ impl Version {
     Ok(())
   }
 
-  fn download_url(&self) -> String {
+  fn download_url(&self) -> Result<String> {
     let name = &self.name;
     let unextended_name = name.replace("extended_", "");
 
-    if self.is_matched_by("<0.102.0") {
-      format!(
-        "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_macOS-ARM64.tar.gz",
-        unextended_name, name
-      )
+    let url = if self.is_matched_by("<0.102.0") {
+      match ARCH {
+        "x86_64" => format!(
+          "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_macOS-64bit.tar.gz",
+          unextended_name, name
+        ),
+        "aarch64" => format!(
+          "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_macOS-ARM64.tar.gz",
+          unextended_name, name
+        ),
+        _ => return Err(anyhow::anyhow!("{} is not supported", ARCH)),
+      }
     } else if self.is_matched_by("<0.103.0") {
       format!(
         "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_macOS-universal.tar.gz",
@@ -101,7 +109,9 @@ impl Version {
         "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_darwin-universal.tar.gz",
         unextended_name, name
       )
-    }
+    };
+
+    Ok(url)
   }
 
   fn is_matched_by(&self, version_constraint: &str) -> bool {
