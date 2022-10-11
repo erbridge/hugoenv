@@ -3,12 +3,14 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use flate2::read::GzDecoder;
 use reqwest::blocking as reqwest;
+use semver::VersionReq;
 use tar::Archive;
 
 use super::fs;
 
 pub struct Version {
   name: String,
+  version: semver::Version,
   versions_dir: PathBuf,
   version_dir: PathBuf,
   bin_file: PathBuf,
@@ -16,12 +18,14 @@ pub struct Version {
 
 impl Version {
   pub fn new(name: String, root_dir: &Path) -> Version {
+    let ver = semver::Version::parse(&name.replace("extended_", "")).unwrap();
     let versions_dir = root_dir.join("versions");
     let version_dir = versions_dir.join(&name);
     let bin_file = version_dir.join("hugo");
 
     Version {
       name,
+      version: ver,
       versions_dir,
       version_dir,
       bin_file,
@@ -65,11 +69,7 @@ impl Version {
   }
 
   fn download(&self) -> Result<()> {
-    let url = format!(
-      "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_darwin-universal.tar.gz",
-      self.name.replace("extended_", ""),
-      self.name
-    );
+    let url = self.download_url();
     let response = reqwest::get(url)?;
     self.extract(response)?;
     Ok(())
@@ -80,5 +80,33 @@ impl Version {
     let mut archive = Archive::new(tar);
     archive.unpack(&self.version_dir)?;
     Ok(())
+  }
+
+  fn download_url(&self) -> String {
+    let name = &self.name;
+    let unextended_name = name.replace("extended_", "");
+
+    if VersionReq::parse("<0.102.0")
+      .unwrap()
+      .matches(&self.version)
+    {
+      format!(
+        "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_macOS-ARM64.tar.gz",
+        unextended_name, name
+      )
+    } else if VersionReq::parse("<0.103.0")
+      .unwrap()
+      .matches(&self.version)
+    {
+      format!(
+        "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_macOS-universal.tar.gz",
+        unextended_name, name
+      )
+    } else {
+      format!(
+        "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_darwin-universal.tar.gz",
+        unextended_name, name
+      )
+    }
   }
 }
