@@ -1,4 +1,4 @@
-use std::env::consts::ARCH;
+use std::env::consts::{ARCH, OS};
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
@@ -87,31 +87,28 @@ impl Version {
     let name = &self.name;
     let unextended_name = name.replace("extended_", "");
 
-    let url = if self.is_matched_by("<0.102.0") {
-      match ARCH {
-        "x86_64" => format!(
-          "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_macOS-64bit.tar.gz",
-          unextended_name, name
-        ),
-        "aarch64" => format!(
-          "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_macOS-ARM64.tar.gz",
-          unextended_name, name
-        ),
-        _ => return Err(anyhow::anyhow!("{} is not supported", ARCH)),
+    let os_arch_suffix = if self.is_matched_by("<0.102.0") {
+      match (OS, ARCH) {
+        ("linux", "x86") => "Linux-32bit",
+        ("linux", "x86_64") => "Linux-64bit",
+        ("linux", "arm") => "Linux-ARM",
+        ("linux", "aarch64") => "Linux-ARM64",
+        ("macos", "x86_64") => "macOS-64bit",
+        ("macos", "aarch64") => "macOS-ARM64",
+        _ => return Err(anyhow::anyhow!("{} {} is not supported", OS, ARCH)),
       }
     } else if self.is_matched_by("<0.103.0") {
-      format!(
-        "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_macOS-universal.tar.gz",
-        unextended_name, name
-      )
+      match (OS, ARCH) {
+        ("macos", _) => "macOS-universal",
+        _ => return Err(anyhow::anyhow!("{} {} is not supported", OS, ARCH)),
+      }
     } else {
-      format!(
-        "https://github.com/gohugoio/hugo/releases/download/v{}/hugo_{}_darwin-universal.tar.gz",
-        unextended_name, name
-      )
+      match (OS, ARCH) {
+        ("macos", _) => "darwin-universal",
+        _ => return Err(anyhow::anyhow!("{} {} is not supported", OS, ARCH)),
+      }
     };
-
-    Ok(url)
+    Ok(format!("https://github.com/gohugoio/hugo/releases/download/v{unextended_name}/hugo_{name}_{os_arch_suffix}.tar.gz"))
   }
 
   fn is_matched_by(&self, version_constraint: &str) -> bool {
